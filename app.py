@@ -1,5 +1,5 @@
 # app.py
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
 from typing import List
 from uuid import uuid4
@@ -14,7 +14,6 @@ class Tarefa(BaseModel):
 class TarefaInput(BaseModel):
     titulo: str
 
-# Banco de dados temporário em memória
 tarefas: List[Tarefa] = []
 
 @app.get("/tarefas", response_model=List[Tarefa])
@@ -27,18 +26,12 @@ def criar_tarefa(tarefa: TarefaInput):
     tarefas.append(nova)
     return nova
 
-@app.put("/tarefas/{id}", response_model=Tarefa)
-def marcar_como_feita(id: str):
-    for t in tarefas:
-        if t.id == id:
-            t.feita = True
-            return t
-    raise HTTPException(status_code=404, detail="Tarefa não encontrada")
-
-@app.delete("/tarefas/{id}")
-def deletar_tarefa(id: str):
-    for t in tarefas:
-        if t.id == id:
-            tarefas.remove(t)
-            return {"mensagem": "Tarefa removida"}
-    raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+@app.post("/calcular")
+async def calcular(request: Request):
+    dados = await request.json()
+    expressao = dados.get("expressao")
+    try:
+        resultado = eval(expressao)  # proposital
+        return {"resultado": resultado}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
