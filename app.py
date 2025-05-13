@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
 from typing import List
 from uuid import uuid4
+from asteval import Interpreter
 
 app = FastAPI(title="API de Tarefas")
 
@@ -30,8 +31,11 @@ def criar_tarefa(tarefa: TarefaInput):
 async def calcular(request: Request):
     dados = await request.json()
     expressao = dados.get("expressao")
-    try:
-        resultado = eval(expressao)  # proposital
-        return {"resultado": resultado}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+
+    ae = Interpreter()
+    resultado = ae(expressao)
+
+    if ae.error:
+        raise HTTPException(status_code=400, detail="Expressão inválida")
+
+    return {"resultado": resultado}
